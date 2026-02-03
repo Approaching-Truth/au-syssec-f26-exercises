@@ -72,9 +72,13 @@ class PPMImage:
             self.comments.append(b'X-mode: ecb')
         elif mode.lower() == 'cbc':
             # --------- add your code here --------
-            raise NotImplementedError(f'mode of operation {mode} not implemented')
-            # iv = ???
-            # ciphertext = ???
+            iv = secrets.token_bytes(16)
+            aes = AES.new(key, AES.MODE_CBC, iv=iv)
+            padded_plaintext = pad(self.data, 16)
+            ciphertext = aes.encrypt(padded_plaintext)
+            self.data = bytearray(ciphertext)
+            self.comments.append(b'X-mode: cbc')
+            self.comments.append(f'X-iv: {iv.hex()}'.encode())
             # ----- end add your code here --------
             # replace the image data with the ciphertext
             self.data = bytearray(ciphertext)
@@ -84,7 +88,6 @@ class PPMImage:
             self.comments.append(f'X-iv: {iv.hex()}'.encode())
         elif mode.lower() == 'ctr':
             # --------- add your code here --------
-            raise NotImplementedError(f'mode of operation {mode} not implemented')
             # nonce = ???
             # ciphertext = ???
             # ----- end add your code here --------
@@ -161,8 +164,9 @@ class PPMImage:
             # Read the used IV from the comments
             iv = bytes.fromhex(find_property_in_comments('iv'))
             # --------- add your code here --------
-            raise NotImplementedError(f'mode of operation {mode} not implemented')
-            # plaintext = ???
+            aes = AES.new(key, AES.MODE_CBC, iv=iv)
+            padded_plaintext = aes.decrypt(self.data)
+            plaintext = unpad(padded_plaintext, 16)
             # ----- end add your code here --------
             # replace the image data with the plaintext
             self.data = bytearray(plaintext)
@@ -172,9 +176,9 @@ class PPMImage:
             # Read the used nonce from the comments
             nonce = bytes.fromhex(find_property_in_comments('nonce'))
             # --------- add your code here --------
-            raise NotImplementedError(f'mode of operation {mode} not implemented')
-            # plaintext = ???
-            # ----- end add your code here --------
+            aes = AES.new(key, AES.MODE_CTR, nonce=nonce)
+            plaintext = aes.decrypt(self.data)
+                          # ----- end add your code here --------
             # replace the image data with the plaintext
             self.data = bytearray(plaintext)
             # remove the comments where we stored the additional data
@@ -281,7 +285,7 @@ class PPMImage:
             consume_comment()
 
         c = file.read(1)
-        if not c in whitespace:
+        if c not in whitespace:
             raise ValueError(f'expected single whitespace, got {c} instead')
 
         size = width * height * 3
@@ -330,14 +334,40 @@ def task1():
 
     key = secrets.token_bytes(16)
     image.encrypt(key, 'ecb')
+    image.data[42] = 0x42
 
     with open('ecb_encrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
-            image.write_to_file(f)
+        image.write_to_file(f)
+
+    #decrypt
+    with open('ecb_encrypted.ppm', 'rb') as f:
+        encrypted_image = PPMImage.load_from_file(f)
+    encrypted_image.decrypt(key)
+    with open('ecb_decrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
+        encrypted_image.write_to_file(f)
     return 
 
 def task2():
-    # --------- add your code here --------
-    return 
+    """Simple test of correctness."""
+    with open('dk.ppm', 'rb') as f:
+        image = PPMImage.load_from_file(f)
+
+    key = secrets.token_bytes(16)
+    image.encrypt(key, 'cbc')
+    image.data[42] = 0x42
+    with open('cbc_encrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
+            image.write_to_file(f)
+     
+
+    #decrypt the image
+    with open('cbc_encrypted.ppm', 'rb') as f:
+        encrypted_image = PPMImage.load_from_file(f)
+    encrypted_image.decrypt(key)
+    
+
+    with open('cbc_decrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
+            encrypted_image.write_to_file(f)
+    return
 
 def task3():
     # --------- add your code here --------
@@ -360,4 +390,4 @@ if __name__ == '__main__':
     # task4()
     # task5()
 
-    final_encryption_and_decryption_test()
+   # final_encryption_and_decryption_test()
