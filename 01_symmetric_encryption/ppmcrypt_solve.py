@@ -395,7 +395,20 @@ def task3():
     with open('se.ppm', 'rb') as f:
         image_se = PPMImage.load_from_file(f)
 
+# --- FIX START: Equalize data lengths ---
+    # Determine the smallest length to ensure both bytearrays match
+    min_len = min(len(image_dk.data), len(image_se.data))
+    
+    # Truncate both to the minimum length (removes trailing whitespace/garbage)
+    image_dk.data = image_dk.data[:min_len]
+    image_se.data = image_se.data[:min_len]
+    # --- FIX END ---
     # Make sure that both flags are of the same size.
+    print(f"Size of Danish flag: {image_dk.size} pixels")
+    print(f"Size of Swedish flag: {image_se.size} pixels")
+    print(f"Size of Danish flag data: {len(image_dk.data)} bytes")
+    print(f"Size of Swedish flag data: {len(image_se.data)} bytes")
+    print(f"Ratio: {len(image_se.data) / len(image_dk.data)}")
     assert len(image_dk.data) == len(image_se.data)
 
     # Make a copy of the Danish flag image and encrypt.

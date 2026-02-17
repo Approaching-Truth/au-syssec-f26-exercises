@@ -1,5 +1,6 @@
 import string
 import secrets
+from base64 import b64encode
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Cipher import AES
 
@@ -88,8 +89,12 @@ class PPMImage:
             self.comments.append(f'X-iv: {iv.hex()}'.encode())
         elif mode.lower() == 'ctr':
             # --------- add your code here --------
-            # nonce = ???
-            # ciphertext = ???
+            aes = AES.new(key, AES.MODE_CTR)
+            ct_bytes = aes.encrypt(self.data)
+            nonce = b64encode(aes.nonce).decode('utf-8')
+            ciphertext = b64encode(ct_bytes).decode('utf-8')
+
+
             # ----- end add your code here --------
             # replace the image data with the ciphertext
             self.data = bytearray(ciphertext)
@@ -367,6 +372,21 @@ def task2():
 
     with open('cbc_decrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
             encrypted_image.write_to_file(f)
+
+    #CTR mode
+    with open('dk.ppm', 'rb') as f:
+        image = PPMImage.load_from_file(f)
+    key = secrets.token_bytes(16)
+    image.encrypt(key, 'ctr')
+    image.data[42] = 0x42
+    with open('ctr_encrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
+            image.write_to_file(f)
+    #decrypt the image
+    with open('ctr_encrypted.ppm', 'rb') as f:
+        encrypted_image = PPMImage.load_from_file(f)
+    encrypted_image.decrypt(key)
+    with open('ctr_decrypted.ppm', 'wb') as f:   # open the image writable in binary mode (with options 'w' and 'b')
+            encrypted_image.write_to_file(f)
     return
 
 def task3():
@@ -383,9 +403,9 @@ def task5():
 
 if __name__ == '__main__':
     # The following is executed if you run `python3 ppmcrypt.py`.
-    task1()
+   # task1()
 
-    # task2()
+     task2()
     # task3()
     # task4()
     # task5()
