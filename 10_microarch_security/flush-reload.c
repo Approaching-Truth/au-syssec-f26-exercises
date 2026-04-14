@@ -8,7 +8,7 @@ int temp;
 unsigned char secret = 94;
 
 /* cache hit time threshold assumed */
-#define CACHE_HIT_THRESHOLD (80)
+#define CACHE_HIT_THRESHOLD (70)
 #define DELTA 1024
 
 #include "flush-reload.h"

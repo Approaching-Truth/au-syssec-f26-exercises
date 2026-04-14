@@ -27,7 +27,7 @@ int main() {
 		victim(i);
 	}
 	// Exploit the out-of-order execution
-	_mm_clflush(&size);
+	// _mm_clflush(&size);
 	for (i = 0; i < 256; i++) {
 		_mm_clflush(&array[i * 4096 + DELTA]);
 	}
